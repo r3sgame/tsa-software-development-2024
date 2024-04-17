@@ -1,14 +1,15 @@
-import { Button, CircularProgress, Paper, TextField, Typography } from '@mui/material'
+import { Box, Button, Card, CircularProgress, List, Paper, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'preact/hooks'
 import { authentication, db, provider } from './firebase';
 import { useNavigate } from 'react-router-dom';
 import GoogleIcon from '@mui/icons-material/Google';
 import { signInWithPopup, signOut } from 'firebase/auth';
-import { Create, ExitToApp, Psychology, Publish } from '@mui/icons-material';
+import { Create, ExitToApp, Psychology, Publish, ToggleOn } from '@mui/icons-material';
 import moment from 'moment/moment';
 import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { client } from "@gradio/client";
 import { Line } from "react-chartjs-2";
+import wordmark from "./assets/wordmark.png"
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -20,6 +21,7 @@ import {
     Tooltip,
     Legend,
 } from "chart.js";
+import Calendar from 'react-calendar';
 
 ChartJS.register(
     ArcElement,
@@ -43,6 +45,8 @@ export function SignIn() {
   return (
     <>
       <Paper variant="outlined" sx={{marginTop: 2, p: 2.5, flexDirection: 'row', overflow: 'auto'}}>
+      <img src={wordmark} alt='wordmark' style={{width: '75%'}}/>
+      <br/>
         <Typography variant="p" sx={{textAlign: 'left'}}>Sign in to start journaling!</Typography>
         <br/>
         <Button variant='outlined' onClick={signin} sx={{marginTop: 3}}><GoogleIcon sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Sign in with Google</Typography></Button>
@@ -68,7 +72,6 @@ export function Write() {
         const today = new Date();
 
         if(userData != null) {
-            console.log(userData.data().dates[userData.data().dates.length - 1])
             if(userData.data().dates[userData.data().dates.length - 1] == today.toLocaleDateString())
             setWritten(true)
         }
@@ -98,9 +101,6 @@ export function Write() {
         // Parse dates using Moment.js
         const date1 = moment(userData.data().dates[0], "MM/DD/YYYY"); // Adjust format if needed
         const date2 = moment(today, "YYYY-MM-DD");
-
-        console.log(date1)
-        console.log(date2)
 
         // Calculate difference in days
         const days_between = date2.diff(date1, 'days');
@@ -160,6 +160,12 @@ export function Analysis() {
 
     const [stress, setStress] = useState([])
     const [days, setDays] = useState([])
+    const [dates, setDates] = useState([])
+    const [selectedDate, setSelectedDate] = useState([])
+
+    const [isGraph, setIsGraph] = useState(true);
+
+    const navigate = useNavigate();
 
     const q = query(collection(db, "users"), where("email", "==", authentication.currentUser.email));
 
@@ -169,10 +175,13 @@ export function Analysis() {
         if(userData != null) {
             setStress(userData.data().stress)
             setDays(userData.data().days)
+            setDates(userData.data().dates)
+            setSelectedDate(userData.data().dates[userData.data().dates.length - 1])
         }
     }
 
     const signout = async () => {
+        navigate("/")
         await signOut(authentication)
       }
 
@@ -180,13 +189,32 @@ export function Analysis() {
         getUserData();
       }, []);
 
+    const handleDateChange = (date) => {
+        setSelectedDate(date.toLocaleDateString('en-US', {
+          month: 'numeric',
+          day: 'numeric',
+          year: 'numeric',
+        }));
+      };
+
+      const findStressLevel = (date) => {
+        for(var i = 0; i < dates.length; i++) {
+          if(dates[i] == date) {
+            return stress[i]
+          }
+        }
+        return "None"
+      };
+
   return (
     <>
       <Paper variant="outlined" sx={{marginTop: 2, p: 2.5, flexDirection: 'row', overflow: 'auto'}}>
           <Typography variant="p" sx={{textAlign: 'left'}}>
         Stress/Health Analysis</Typography>
         <br/>
-        {stress.length > 0 && <><div style={{maxHeight: '40vh', marginBottom: '10px'}}>
+        <Button sx={{marginTop: 1, marginBottom: 1}} onClick={() => {setIsGraph(!isGraph)}}><ToggleOn sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Toggle View Mode</Typography></Button>
+        <br/>
+        {isGraph && stress.length > 0 && <><div style={{maxHeight: '40vh', marginBottom: '10px'}}>
         <Line
             data={{
             labels: days.map((element) => "Day " + element).slice(-50),
@@ -222,7 +250,18 @@ export function Analysis() {
                                         }}
                                     /></div>
     <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>Each point represents your stress percentage for the day. Try to get it as low as you can!</Typography></>}
+
     {stress.length == 0 && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>It seems you haven't written any logs for analysis... try creating one!</Typography>}
+
+    {!isGraph && stress.length > 0 && <>
+     <Box width='50vw'>                             
+    <Calendar onChange={handleDateChange}/>
+    </Box>
+    <br/>
+    
+    {findStressLevel(selectedDate) != "None" && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>Stress level on {selectedDate}:{" "} {(findStressLevel(selectedDate)*100).toFixed(2) || 'None'}%</Typography>}
+    {findStressLevel(selectedDate) == "None" && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>Stress level on {selectedDate}:{" "} None</Typography>}
+    </>}
     <br/>
     <Button href="/" sx={{marginTop: 3}}><Create sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Journal</Typography></Button>
     <Button onClick={signout} sx={{marginTop: 3, marginLeft: 2}}><ExitToApp sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Sign out</Typography></Button>

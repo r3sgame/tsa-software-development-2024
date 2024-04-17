@@ -71,6 +71,20 @@ export function App() {
       <Route path="/analysis" exact element={<React.Fragment><Analysis/></React.Fragment>} />
       </Routes>}
       </BrowserRouter>
+      <div className="area">
+<ul class="circles">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+            </ul>
+</div>
     </ThemeProvider>
   )
 }
