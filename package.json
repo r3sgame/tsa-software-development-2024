@@ -16,6 +16,7 @@
     "@mui/material": "^5.15.14",
     "axios": "^1.6.8",
     "chart.js": "^4.4.2",
+    "compromise": "^14.13.0",
     "datetime": "^0.0.3",
     "firebase": "^10.9.0",
     "gradio": "^0.1.0",

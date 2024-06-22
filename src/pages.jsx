@@ -1,10 +1,10 @@
-import { Box, Button, Card, CircularProgress, List, Paper, TextField, Typography } from '@mui/material'
+import { Box, Button, Card, CircularProgress, Link, List, Paper, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'preact/hooks'
 import { authentication, db, provider } from './firebase';
 import { useNavigate } from 'react-router-dom';
 import GoogleIcon from '@mui/icons-material/Google';
 import { signInWithPopup, signOut } from 'firebase/auth';
-import { Create, ExitToApp, Psychology, Publish, ToggleOn } from '@mui/icons-material';
+import { ArrowBack, Create, ExitToApp, Psychology, Publish, ToggleOn } from '@mui/icons-material';
 import moment from 'moment/moment';
 import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { client } from "@gradio/client";
@@ -22,6 +22,7 @@ import {
     Legend,
 } from "chart.js";
 import Calendar from 'react-calendar';
+import nlp, * as Compromise from 'compromise';
 
 ChartJS.register(
     ArcElement,
@@ -90,11 +91,7 @@ export function Write() {
 
         let stressLevel;
 
-        if(result.data[0].confidences[0].label = "LABEL_0") {
-            stressLevel = 1 - result.data[0].confidences[0].confidence
-        } else {
-            stressLevel = result.data[0].confidences[0].confidence
-        }
+        stressLevel = result.data[0].confidences.find(element => element.label === 'LABEL_1').confidence
 
         if (userData != null) {
 
@@ -159,11 +156,15 @@ export function Write() {
 export function Analysis() {
 
     const [stress, setStress] = useState([])
+    const [logs, setLogs] = useState([])
     const [days, setDays] = useState([])
     const [dates, setDates] = useState([])
     const [selectedDate, setSelectedDate] = useState([])
+    const [predictedTopic, setPredictedTopic] = useState("LOADING...")
 
     const [isGraph, setIsGraph] = useState(true);
+
+    const topicElements = ["school", "work", "relationships", "excitement", "money", "health"]
 
     const navigate = useNavigate();
 
@@ -187,6 +188,7 @@ export function Analysis() {
 
     useEffect(() => {
         getUserData();
+        findMostRelevantWord()
       }, []);
 
     const handleDateChange = (date) => {
@@ -206,11 +208,44 @@ export function Analysis() {
         return "None"
       };
 
+      const findLog = (date) => {
+        for(var i = 0; i < dates.length; i++) {
+          if(dates[i] == date) {
+            return logs[i]
+          }
+        }
+        return "None"
+      };
+
+      const findMostRelevantWord = async () => {
+        try {
+          const userData = (await getDocs(q)).docs[0];
+          setLogs(userData.data().content);
+          const model = await client("r3sgame/sentence-similarity-code");
+          const result = await model.predict("/predict", [
+            userData.data().content[userData.data().content.length - 1],
+            "I am stressed because of school\nI am stressed because of work\nI am stressed because of relationships\nI am stressed because of money\nI am stressed because of my health", // string in 'Input' Textbox component
+          ]);
+          console.log(result);
+          setPredictedTopic(topicElements[result.data[0].indexOf(Math.max(...result.data[0]))]);
+        } catch (error) {
+          console.error("Error predicting topic:", error);
+          // You can also set a default predicted topic here if needed
+          // setPredictedTopic("default_topic");
+        }
+      };
+      
+      
+
   return (
     <>
       <Paper variant="outlined" sx={{marginTop: 2, p: 2.5, flexDirection: 'row', overflow: 'auto'}}>
           <Typography variant="p" sx={{textAlign: 'left'}}>
         Stress/Health Analysis</Typography>
+        <br/>
+        {stress[stress.length - 1] <= 0.33 && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>You haven't been very stressed recently. Great job!</Typography>}
+        {stress[stress.length - 1] > 0.33 && stress[stress.length - 1] <= 0.66 && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>You've been a bit stressed recently. We think it's because of <a href={`/${predictedTopic}`}>{predictedTopic}</a>.</Typography>}
+        {stress[stress.length - 1] > 0.66 && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>You've been very stressed recently. We think it's because of <a href={`/${predictedTopic}`}>{predictedTopic}</a>.</Typography>}
         <br/>
         <Button sx={{marginTop: 1, marginBottom: 1}} onClick={() => {setIsGraph(!isGraph)}}><ToggleOn sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Toggle View Mode</Typography></Button>
         <br/>
@@ -261,6 +296,8 @@ export function Analysis() {
     
     {findStressLevel(selectedDate) != "None" && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>Stress level on {selectedDate}:{" "} {(findStressLevel(selectedDate)*100).toFixed(2) || 'None'}%</Typography>}
     {findStressLevel(selectedDate) == "None" && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>Stress level on {selectedDate}:{" "} None</Typography>}
+    <br/>
+    {findStressLevel(selectedDate) != "None" && <Typography variant="p" sx={{color: 'grey', marginTop: 2}}>Entry: {findLog(selectedDate).substring(0, 75)}</Typography>}
     </>}
     <br/>
     <Button href="/" sx={{marginTop: 3}}><Create sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Journal</Typography></Button>
@@ -268,4 +305,17 @@ export function Analysis() {
       </Paper>
     </>
   )
+}
+
+export function StressCause(props) {
+  const { name, description, image } = props;
+
+  return (
+    <Paper variant="outlined" sx={{marginTop: 2, p: 2.5, flexDirection: 'row', overflow: 'auto'}}>
+      <Typography variant="p" sx={{textAlign: 'left'}}>{name}</Typography><br/>
+      <img src={image} alt={name} style={{height: '35vh'}}/><br/>
+      <Typography variant="body1" textAlign='left' sx={{color: 'grey'}}>{description}</Typography><br/>
+      <Button sx={{marginTop: 1, marginBottom: 1}} href='/analysis'><ArrowBack sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Back to Analysis</Typography></Button>
+    </Paper>
+  );
 }
