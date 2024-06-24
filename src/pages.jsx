@@ -313,7 +313,7 @@ export function StressCause(props) {
   return (
     <Paper variant="outlined" sx={{marginTop: 2, p: 2.5, flexDirection: 'row', overflow: 'auto'}}>
       <Typography variant="p" sx={{textAlign: 'left'}}>{name}</Typography><br/>
-      <img src={image} alt={name} style={{height: '35vh'}}/><br/>
+      <img src={image} alt={name} style={{height: '35vh', filter: 'brightness(80%)'}}/><br/>
       <Typography variant="body1" textAlign='left' sx={{color: 'grey'}}>{description}</Typography><br/>
       <Button sx={{marginTop: 1, marginBottom: 1}} href='/analysis'><ArrowBack sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Back to Analysis</Typography></Button>
     </Paper>
