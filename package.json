@@ -14,18 +14,22 @@
     "@gradio/client": "^0.14.0",
     "@mui/icons-material": "^5.15.14",
     "@mui/material": "^5.15.14",
+    "@react-pdf/renderer": "^3.4.4",
     "axios": "^1.6.8",
     "chart.js": "^4.4.2",
     "compromise": "^14.13.0",
     "datetime": "^0.0.3",
     "firebase": "^10.9.0",
     "gradio": "^0.1.0",
+    "html2pdf": "^0.0.11",
     "moment": "^2.30.1",
     "preact": "^10.19.6",
     "react-calendar": "^4.8.0",
     "react-chartjs-2": "^5.2.0",
     "react-firebase-hooks": "^5.1.1",
-    "react-router-dom": "^6.22.3"
+    "react-router-dom": "^6.22.3",
+    "react-to-html": "^0.0.4",
+    "react-to-pdf": "^1.0.1"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.8.2",

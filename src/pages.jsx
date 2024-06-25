@@ -4,7 +4,7 @@ import { authentication, db, provider } from './firebase';
 import { useNavigate } from 'react-router-dom';
 import GoogleIcon from '@mui/icons-material/Google';
 import { signInWithPopup, signOut } from 'firebase/auth';
-import { ArrowBack, Create, ExitToApp, Psychology, Publish, ToggleOn } from '@mui/icons-material';
+import { ArrowBack, Create, ExitToApp, FileDownload, Psychology, Publish, ToggleOn } from '@mui/icons-material';
 import moment from 'moment/moment';
 import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { client } from "@gradio/client";
@@ -22,7 +22,8 @@ import {
     Legend,
 } from "chart.js";
 import Calendar from 'react-calendar';
-import nlp, * as Compromise from 'compromise';
+import { render } from 'preact';
+import { usePDF } from 'react-to-pdf';
 
 ChartJS.register(
     ArcElement,
@@ -166,6 +167,28 @@ export function Analysis() {
 
     const topicElements = ["school", "work", "relationships", "excitement", "money", "health"]
 
+    const { toPDF, targetRef } = usePDF({
+      filename: "my-report.pdf", // Specify desired filename
+  });
+
+    const MyDocument = ({ dates, stress }) => (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <Text>Stress Data Report</Text>
+          <View style={styles.table}>
+            <Text style={styles.tableHeader}>Dates</Text>
+            <Text style={styles.tableHeader}>Stress Level</Text>
+          </View>
+          {dates.map((date, index) => (
+            <View key={index} style={styles.table}>
+              <Text style={styles.tableData}>{date.toString()}</Text>
+              <Text style={styles.tableData}>{stress[index]}</Text>
+            </View>
+          ))}
+        </Page>
+      </Document>
+    );
+
     const navigate = useNavigate();
 
     const q = query(collection(db, "users"), where("email", "==", authentication.currentUser.email));
@@ -249,7 +272,7 @@ export function Analysis() {
         <br/>
         <Button sx={{marginTop: 1, marginBottom: 1}} onClick={() => {setIsGraph(!isGraph)}}><ToggleOn sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Toggle View Mode</Typography></Button>
         <br/>
-        {isGraph && stress.length > 0 && <><div style={{maxHeight: '40vh', marginBottom: '10px'}}>
+        {isGraph && stress.length > 0 && <><div ref={targetRef} style={{maxHeight: '40vh', marginBottom: '10px'}}>
         <Line
             data={{
             labels: days.map((element) => "Day " + element).slice(-50),
@@ -301,6 +324,7 @@ export function Analysis() {
     </>}
     <br/>
     <Button href="/" sx={{marginTop: 3}}><Create sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Journal</Typography></Button>
+    <Button onClick={toPDF} sx={{marginTop: 3, marginLeft: 2}}><FileDownload sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Export</Typography></Button>
     <Button onClick={signout} sx={{marginTop: 3, marginLeft: 2}}><ExitToApp sx={{marginRight: 1.5}}/><Typography color="inherit" variant="p">Sign out</Typography></Button>
       </Paper>
     </>

@@ -120,7 +120,7 @@ const darkTheme = createTheme({
 });
 
 export function App() {
-  const [theme, setTheme] = useState(lightTheme); // Initial theme is light
+  const [theme, setTheme] = useState(darkTheme); // Initial theme is light
 
   const toggleTheme = () => {
     setTheme(theme === lightTheme ? darkTheme : lightTheme);
@@ -148,6 +148,20 @@ export function App() {
         </Routes>}
       </BrowserRouter>
       <Button sx={{marginTop: 2}} onClick={toggleTheme}><Typography color="inherit" variant="p">Toggle Theme</Typography></Button>  {/* Button to toggle theme */}
+      <div className="area">
+<ul class="circles">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+            </ul>
+</div>
     </ThemeProvider>
   )
 }
